@@ -28,3 +28,15 @@ class GameState():
         
         self.combined_all = self.combined_color[Color.WHITE] | self.combined_color[Color.BLACK]
     
+    def print_board(self):
+        board = bin(self.combined_all)[2:]
+        rank = 8
+        print("")
+        for i in range(8):
+            print(rank, end = "   ")
+            for j in range(8):
+                print(board[i*8+j:i*8+j+1], end = " ")
+            rank -= 1
+            print("")
+        print("")
+        print("    A B C D E F G H")
