@@ -5,8 +5,9 @@ class GameState():
     def __init__(self):
         self.pieces = np.zeros((2,6), dtype=np.uint64) 
         self.combined_color = np.zeros(2, dtype=np.uint64) 
-        self.combined_all = np.uint64(0) 
-        self.color = Color.WHITE 
+        self.board = np.uint64(0) 
+        self.whiteToMove = True
+        self.moveLog = [] 
 
         self.pieces[Color.WHITE][Piece.PAWN] = np.uint64(0x000000000000FF00)
         self.pieces[Color.WHITE][Piece.KNIGHT] = np.uint64(0x0000000000000042)
@@ -26,12 +27,12 @@ class GameState():
             for c in Color:
                 self.combined_color[c] |= self.pieces[c][p]
         
-        self.combined_all = self.combined_color[Color.WHITE] | self.combined_color[Color.BLACK]
+        self.board = self.combined_color[Color.WHITE] | self.combined_color[Color.BLACK]
     
 
 
     def __str__(self):
-        board = bin(self.combined_all)[2:]
+        board = bin(self.board)[2:]
         rank = 8
         output = []
         output.append("")
