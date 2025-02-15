@@ -1,9 +1,10 @@
 import ChessEngine 
+import numpy as np
 import os
 os.environ['PYGAME_HIDE_SUPPORT_PROMPT'] = '1' # don't display pygame prompt
 import pygame as p
 from constans import Color, Piece
-import numpy as np
+from Move import Move
 
 
 
@@ -23,13 +24,34 @@ def main():
     screen = p.display.set_mode((WIDTH, HEIGHT))
     clock = p.time.Clock()
     screen.fill(p.Color("white"))
-    gs = ChessEngine.GameState()
+    gs = ChessEngine.ChessBoard()
+    gs.init_board()
     load_images()
     running = True
+    sqSelected = ()
+    playerClicks = []
     while running:
         for e in p.event.get():
             if e.type == p.QUIT:
                 running = False
+            elif e.type == p.MOUSEBUTTONDOWN:
+                location = p.mouse.get_pos() # (x, y) location of mouse
+                column = location[0]//SQ_SIZE 
+                row = location[1]//SQ_SIZE
+                if sqSelected == (row, column): # pressed the same square twice
+                    sqSelected = ()
+                    playerClicks = []
+                else:
+                    sqSelected = (row, column)
+                    playerClicks.append(sqSelected)
+                if len(playerClicks) == 2: # second click -> move 
+                    print(playerClicks)
+                    move = Move(playerClicks[0], playerClicks[1], gs.board)
+                    print(move.get_chess_notation())
+                    gs.make_move(move)
+                    sqSelected = () # reset user clicks
+                    playerClicks = []
+
         draw_game_state(screen, gs)
         clock.tick(MAX_FPS)
         p.display.flip()

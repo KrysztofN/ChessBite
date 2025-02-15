@@ -1,13 +1,30 @@
 from constans import Color, Piece, File, Rank, PieceMapping
 import numpy as np
 
-class GameState():
+class ChessBoard():
     def __init__(self):
         self.pieces = np.zeros((2,6), dtype=np.uint64) 
         self.combined_color = np.zeros(2, dtype=np.uint64) 
-        self.board = np.uint64(0) 
-        self.whiteToMove = True
-        self.moveLog = [] 
+        self.board = np.uint64(0)
+        self.color = Color.WHITE
+        self.move_log = [] 
+    
+    def make_move(self, move):
+        for piece_type in Piece:
+            if self.pieces[self.color][piece_type] & move.piece_moved:
+                self.pieces[self.color][piece_type] &= ~(np.uint64(move.piece_moved))  
+                self.pieces[self.color][piece_type] |= np.uint64(move.piece_captured)
+        
+        self.combined_color = np.zeros(2, dtype=np.uint64) 
+        for p in Piece:
+            for c in Color:
+                self.combined_color[c] |= self.pieces[c][p]
+        
+        self.board = self.combined_color[Color.WHITE] | self.combined_color[Color.BLACK]
+
+        self.move_log.append(move.get_chess_notation())
+        self.color = ~self.color
+    
 
     
     def init_board(self):
@@ -48,6 +65,3 @@ class GameState():
         output.append("    A B C D E F G H")
 
         return "\n".join(output)
-
-newGame = GameState()
-print(newGame)
