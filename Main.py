@@ -1,7 +1,11 @@
 import ChessEngine 
+import os
+os.environ['PYGAME_HIDE_SUPPORT_PROMPT'] = '1' # don't display pygame prompt
 import pygame as p
 from constans import Color, Piece
 import numpy as np
+
+
 
 WIDTH = HEIGHT = 512
 DIMENSION = 8 # 8x8 chessboard
@@ -36,7 +40,8 @@ def draw_game_state(screen, gs):
 
 
 def draw_board(screen):
-    colors = [p.Color(184,139,74), p.Color(227,193,111)]
+    # colors = [p.Color(184,139,74), p.Color(227,193,111)]
+    colors = [p.Color(238, 238, 210), p.Color(118, 150, 86)]
     for row in range(DIMENSION):
         for column in range(DIMENSION):
             color = colors[(row+column + 1) % 2]

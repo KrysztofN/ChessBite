@@ -1,4 +1,4 @@
-from constans import Color, Piece, File, Rank
+from constans import Color, Piece, File, Rank, PieceMapping
 import numpy as np
 
 class GameState():
@@ -9,6 +9,8 @@ class GameState():
         self.whiteToMove = True
         self.moveLog = [] 
 
+    
+    def init_board(self):
         self.pieces[Color.WHITE][Piece.PAWN] = np.uint64(0x000000000000FF00)
         self.pieces[Color.WHITE][Piece.KNIGHT] = np.uint64(0x0000000000000042)
         self.pieces[Color.WHITE][Piece.BISHOP] = np.uint64(0x0000000000000024)
@@ -28,12 +30,12 @@ class GameState():
                 self.combined_color[c] |= self.pieces[c][p]
         
         self.board = self.combined_color[Color.WHITE] | self.combined_color[Color.BLACK]
-    
 
 
     def __str__(self):
         board = bin(self.board)[2:]
         rank = 8
+        file = 8
         output = []
         output.append("")
         for i in range(8):
@@ -41,7 +43,7 @@ class GameState():
             for j in range(8):
                 row += board[i*8+j:i*8+j+1] + " "
             output.append(row)
-            rank -= 1
+            rank -= 1               
         output.append("")
         output.append("    A B C D E F G H")
 

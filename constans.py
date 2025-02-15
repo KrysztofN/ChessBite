@@ -40,16 +40,20 @@ class Piece(IntEnum):
     QUEEN = 4
     KING = 5
 
-    def to_char(self):
-        if self == Piece.PAWN:
-            return 'p'
-        elif self == Piece.KNIGHT:
-            return 'n'
-        elif self == Piece.BISHOP:
-            return 'b'
-        elif self == Piece.ROOK:
-            return 'r'
-        elif self == Piece.QUEEN:
-            return 'q'
-        elif self == Piece.KING:
-            return 'k'
+
+class PieceMapping:
+
+    piece_mapping = {
+        (Color.WHITE, Piece.PAWN): 'wp',
+        (Color.WHITE, Piece.ROOK): 'wR',
+        (Color.WHITE, Piece.KNIGHT): 'wN',
+        (Color.WHITE, Piece.BISHOP): 'wB',
+        (Color.WHITE, Piece.QUEEN): 'wQ',
+        (Color.WHITE, Piece.KING): 'wK',
+        (Color.BLACK, Piece.PAWN): 'bp',
+        (Color.BLACK, Piece.ROOK): 'bR',
+        (Color.BLACK, Piece.KNIGHT): 'bN',
+        (Color.BLACK, Piece.BISHOP): 'bB',
+        (Color.BLACK, Piece.QUEEN): 'bQ',
+        (Color.BLACK, Piece.KING): 'bK',
+    }
