@@ -22,9 +22,62 @@ class ChessBoard():
         
         self.board = self.combined_color[Color.WHITE] | self.combined_color[Color.BLACK]
 
-        self.move_log.append(move.get_chess_notation())
+        self.move_log.append(move)
         self.color = ~self.color
     
+    def undo_move(self):
+        if self.move_log:
+            move = self.move_log.pop()
+            self.color = ~self.color
+
+            for piece_type in Piece:
+                if self.pieces[self.color][piece_type] & move.piece_captured:
+                    self.pieces[self.color][piece_type] &= ~(np.uint64(move.piece_captured))
+                    self.pieces[self.color][piece_type] |= np.uint64(move.piece_moved)
+            
+            # TODO: Restore captured piece if any
+
+            self.combined_color = np.zeros(2, dtype=np.uint64) 
+            for p in Piece:
+                for c in Color:
+                    self.combined_color[c] |= self.pieces[c][p]
+            
+            self.board = self.combined_color[Color.WHITE] | self.combined_color[Color.BLACK]
+
+    def get_valid_moves(self):
+        return self.get_all_possible_moves()
+
+    def get_all_possible_moves(self):
+        moves = []
+        row = 8
+        col = 8
+        current_pieces = self.combined_color[self.color]
+
+        while current_pieces:
+            
+            rightmost_piece = current_pieces & (~current_pieces+1)
+            print(bin(rightmost_piece))
+            current_pieces = current_pieces & ~rightmost_piece
+            print(bin(current_pieces))
+            square = (63 - int(np.log2(rightmost_piece)))
+            row = square // 8
+            col = square % 8
+            for piece_type in Piece:
+                if self.piece[self.color][self.piece_type] & square:
+                    if piece_type == Piece.PAWN:
+                        self.get_pawn_oves(row, col, moves)
+                    elif piece_type == Piece.ROOK:
+                        self.get_rook_moves(row, col, moves)
+                    elif piece_type == Piece.BISHOP:
+                        self.get_bishop_moves(row, col, moves)
+                    elif piece_type == Piece.KNIGHT:
+                        self.get_knight_moves(row, col, moves)
+                    elif piece_type == Piece.KING:
+                        self.get_king_moves(row, col, moves)
+                    elif piece_type == Piece.QUEEN:
+                        self.get_queen_moves(row, col, moves)
+                    
+
 
     
     def init_board(self):
