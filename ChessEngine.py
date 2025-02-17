@@ -1,5 +1,6 @@
 from constans import Color, Piece, File, Rank, PieceMapping
 import numpy as np
+from Move import Move
 
 class ChessBoard():
     def __init__(self):
@@ -49,23 +50,21 @@ class ChessBoard():
 
     def get_all_possible_moves(self):
         moves = []
-        row = 8
-        col = 8
         current_pieces = self.combined_color[self.color]
 
         while current_pieces:
             
+            # Get rightmost set bit 
             rightmost_piece = current_pieces & (~current_pieces+1)
-            print(bin(rightmost_piece))
+            # Zero-out rightmost piece -> consider next rightmost piece
             current_pieces = current_pieces & ~rightmost_piece
-            print(bin(current_pieces))
             square = (63 - int(np.log2(rightmost_piece)))
             row = square // 8
             col = square % 8
             for piece_type in Piece:
-                if self.piece[self.color][self.piece_type] & square:
+                if self.pieces[self.color][piece_type] & rightmost_piece:
                     if piece_type == Piece.PAWN:
-                        self.get_pawn_oves(row, col, moves)
+                        self.get_pawn_moves(row, col, moves)
                     elif piece_type == Piece.ROOK:
                         self.get_rook_moves(row, col, moves)
                     elif piece_type == Piece.BISHOP:
@@ -76,9 +75,48 @@ class ChessBoard():
                         self.get_king_moves(row, col, moves)
                     elif piece_type == Piece.QUEEN:
                         self.get_queen_moves(row, col, moves)
-                    
+    
+        return moves
 
+    def get_pawn_moves(self, r, c, moves):
+        if self.color == Color.WHITE:
+            if not (self.board &  np.uint64(1 << (63 - ((r-1) * 8 + c)))):
+                moves.append(Move((r,c), (r-1, c), self.board))
+                if r == 6 and not(self.board & np.uint64(1 << (63 - ((r-2) * 8 + c)))):
+                    moves.append(Move((r,c), (r-2,c), self.board))
+            if c > 0:
+                if self.combined_color[Color.BLACK] & np.uint64(1 << (63 - ((r-1) * 8 + (c-1)))):
+                    moves.append(Move((r,c), (r-1, c-1), self.board))
+            if c < 7: 
+                if self.combined_color[Color.BLACK] & np.uint64(1 << (63 - ((r-1) * 8 + (c+1)))):
+                    moves.append(Move((r,c), (r-1, c+1), self.board))
+        else:
+            if not(self.board & np.uint64(1 << (63 - ((r+1) * 8 + c)))):
+                moves.append(Move((r,c), (r+1,c), self.board))
+                if r == 1 and not (self.board & np.uint64(1 << (63 - ((r+2) * 8 + c)))):
+                    moves.append(Move((r,c), (r+2,c), self.board))
+            if c > 0:
+                if self.combined_color[Color.WHITE] & np.uint64(1 << (63 - ((r+1) * 8 + (c-1)))):
+                    moves.append(Move((r,c), (r+1, c-1), self.board))
+            if c < 7: 
+                if self.combined_color[Color.WHITE] & np.uint64(1 << (63 - ((r+1) * 8 + (c+1)))):
+                    moves.append(Move((r,c), (r+1, c+1), self.board))
 
+    def get_rook_moves(self, r, c, moves):
+        pass
+
+    def get_bishop_moves(self, r, c, moves):
+        pass
+
+    def get_knight_moves(self, r, c, moves):
+        pass 
+
+    def get_king_moves(self, r, c, moves):
+        pass 
+
+    def get_queen_moves(self, r, c, moves):
+        pass
+                
     
     def init_board(self):
         self.pieces[Color.WHITE][Piece.PAWN] = np.uint64(0x000000000000FF00)
