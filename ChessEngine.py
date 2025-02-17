@@ -104,7 +104,25 @@ class ChessBoard():
 
     def get_rook_moves(self, r, c, moves):
         directions = [(-1, 0), (0, 1), (1, 0), (0, -1)]
-        
+        self.perform_linear_move(r, c, moves, directions)
+
+    def get_bishop_moves(self, r, c, moves):
+        directions = [(-1, -1), (-1, 1), (1, -1), (1, 1)]
+        self.perform_linear_move(r, c, moves, directions)
+
+    def get_knight_moves(self, r, c, moves):
+        directions = [(1, -2), (1, 2), (-1, -2), (-1, 2), (-2, -1), (-2, 1), (2, -1), (2, 1)]
+        self.perform_single_move(r, c, moves, directions)
+
+    def get_king_moves(self, r, c, moves):
+        directions = [(-1, -1), (-1, 1), (1, -1), (1, 1), (-1, 0), (0, 1), (1, 0), (0, -1)]
+        self.perform_single_move(r, c, moves, directions)
+
+    def get_queen_moves(self, r, c, moves):
+        directions = [(-1, -1), (-1, 1), (1, -1), (1, 1), (-1, 0), (0, 1), (1, 0), (0, -1)]
+        self.perform_linear_move(r, c, moves, directions)
+
+    def perform_linear_move(self, r, c, moves, directions):
         for dir_r, dir_c in directions:
             move_r, move_c = r + dir_r, c + dir_c
             
@@ -118,20 +136,17 @@ class ChessBoard():
                 
                 move_r += dir_r
                 move_c += dir_c
-
-    def get_bishop_moves(self, r, c, moves):
-        pass
-
-    def get_knight_moves(self, r, c, moves):
-        pass 
-
-    def get_king_moves(self, r, c, moves):
-        pass 
-
-    def get_queen_moves(self, r, c, moves):
-        pass
-                
     
+    def perform_single_move(self, r, c, moves, directions):
+        for dir_r, dir_c in directions:
+            move_r, move_c = r + dir_r, c + dir_c
+            
+            if 0 <= move_r <= 7 and 0 <= move_c <= 7:
+                if self.combined_color[self.color] & np.uint64(1 << (63 - (move_r * 8 + move_c))):
+                    continue  
+                moves.append(Move((r, c), (move_r, move_c), self.board))
+                
+               
     def init_board(self):
         self.pieces[Color.WHITE][Piece.PAWN] = np.uint64(0x000000000000FF00)
         self.pieces[Color.WHITE][Piece.KNIGHT] = np.uint64(0x0000000000000042)
