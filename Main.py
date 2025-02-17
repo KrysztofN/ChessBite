@@ -48,13 +48,15 @@ def main():
                     sqSelected = (row, column)
                     playerClicks.append(sqSelected)
                 if len(playerClicks) == 2: # second click -> move 
-                    move = Move(playerClicks[0], playerClicks[1], gs.board)
+                    move = Move(playerClicks[0], playerClicks[1])
                     print(move.get_chess_notation())
                     if move in valid_moves:
                         gs.make_move(move)
                         move_made = True
-                    sqSelected = () # reset user clicks
-                    playerClicks = []
+                        sqSelected = () # reset user clicks
+                        playerClicks = []
+                    else:
+                        playerClicks = [sqSelected]
             elif e.type == p.KEYDOWN:
                 if e.key == p.K_r:
                     gs.undo_move() 
@@ -63,15 +65,41 @@ def main():
         if move_made:
             valid_moves = gs.get_valid_moves()
             move_made = False
-        
-        draw_game_state(screen, gs)
+
+        draw_game_state(playerClicks, valid_moves, screen, gs)
         clock.tick(MAX_FPS)
         p.display.flip()
 
-def draw_game_state(screen, gs):
+
+def draw_game_state(playerClicks, valid_moves, screen, gs):
     draw_board(screen)
+    if len(playerClicks) == 1:
+        highlight_possible_positions(playerClicks, valid_moves, screen, gs)
     draw_pieces(screen, gs)
 
+def highlight_possible_positions(playerClicks, valid_moves, screen, gs):
+    highlighted_squares = []
+    start_r, start_c = playerClicks[0][0], playerClicks[0][1]
+    for move in valid_moves:
+        if start_r == move.start_row and start_c == move.start_col:
+            highlighted_squares.append((move.end_row, move.end_col))
+    
+    # White is 0, black is 1 
+    # Only allow to select a piece if it's current color's turn
+    if gs.combined_color[gs.color] & np.uint64(1 << (63 - (start_r * 8 + start_c))):
+        s = p.Surface((SQ_SIZE, SQ_SIZE))
+        s.set_alpha(70)
+        s.fill(p.Color('grey'))
+        screen.blit(s, (start_c * SQ_SIZE, start_r * SQ_SIZE))
+
+    for end_r, end_c in highlighted_squares:
+        center_x = end_c * SQ_SIZE + SQ_SIZE//2
+        center_y = end_r * SQ_SIZE + SQ_SIZE//2
+        # if capture possible
+        if gs.combined_color[~gs.color] & np.uint64(1 << (63 - (end_r * 8 + end_c))):
+            p.draw.circle(screen, p.Color('grey'), (center_x, center_y), SQ_SIZE//2.5, 8)
+        else:
+            p.draw.circle(screen, p.Color('grey'), (center_x, center_y), SQ_SIZE//6)
 
 def draw_board(screen):
     # colors = [p.Color(184,139,74), p.Color(227,193,111)]
