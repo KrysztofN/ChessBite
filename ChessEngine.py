@@ -103,7 +103,21 @@ class ChessBoard():
                     moves.append(Move((r,c), (r+1, c+1), self.board))
 
     def get_rook_moves(self, r, c, moves):
-        pass
+        directions = [(-1, 0), (0, 1), (1, 0), (0, -1)]
+        
+        for dir_r, dir_c in directions:
+            move_r, move_c = r + dir_r, c + dir_c
+            
+            while 0 <= move_r <= 7 and 0 <= move_c <= 7:
+                if self.combined_color[self.color] & np.uint64(1 << (63 - (move_r * 8 + move_c))):
+                    break  
+                moves.append(Move((r, c), (move_r, move_c), self.board))
+                
+                if self.combined_color[~self.color] & np.uint64(1 << (63 - (move_r * 8 + move_c))):
+                    break  
+                
+                move_r += dir_r
+                move_c += dir_c
 
     def get_bishop_moves(self, r, c, moves):
         pass
