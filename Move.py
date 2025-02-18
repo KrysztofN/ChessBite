@@ -16,6 +16,8 @@ class Move():
         self.piece_moved = 1 << (63 - (self.start_row * 8 + self.start_col))
         self.piece_captured = 1 << (63 - (self.end_row * 8 + self.end_col))
         self.move_ID = self.start_row * 1000 + self.start_col * 100 + self.end_row * 10 + self.end_col
+        self.is_capture = False
+        self.captured_piece_type = None
 
     def __eq__(self, other):
         if isinstance(other, Move):
@@ -27,3 +29,4 @@ class Move():
 
     def get_rank_file(self, r, c):
         return self.cols_to_files[c] + self.rows_to_ranks[r]
+    

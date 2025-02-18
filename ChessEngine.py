@@ -12,18 +12,34 @@ class ChessBoard():
         self.inCheck = False
         self.pins = []
         self.check = []
+        self.captured_piece = False
     
     def make_move(self, move):
+
+        if self.combined_color[~self.color] & move.piece_captured:
+            move.is_capture = True
+            for piece_type in Piece:
+                if self.pieces[~self.color][piece_type] & move.piece_captured:
+                    move.captured_piece_type = piece_type
+                    break
+
         for piece_type in Piece:
             if self.pieces[self.color][piece_type] & move.piece_moved:
-                self.pieces[self.color][piece_type] &= ~(np.uint64(move.piece_moved))  
+                self.pieces[self.color][piece_type] &= ~(np.uint64(move.piece_moved))     
                 self.pieces[self.color][piece_type] |= np.uint64(move.piece_captured)
+                break  
         
+        for piece_type in Piece:
+            if self.pieces[~self.color][piece_type] & move.piece_captured:
+                self.pieces[~self.color][piece_type] &= ~(np.uint64(move.piece_captured))   
+                break  
+
         self.combined_color = np.zeros(2, dtype=np.uint64) 
         for p in Piece:
             for c in Color:
                 self.combined_color[c] |= self.pieces[c][p]
         
+        self.board = np.uint64(0)
         self.board = self.combined_color[Color.WHITE] | self.combined_color[Color.BLACK]
 
         self.move_log.append(move)
@@ -38,9 +54,11 @@ class ChessBoard():
                 if self.pieces[self.color][piece_type] & move.piece_captured:
                     self.pieces[self.color][piece_type] &= ~(np.uint64(move.piece_captured))
                     self.pieces[self.color][piece_type] |= np.uint64(move.piece_moved)
+                    break
             
-            # TODO: Restore captured piece if any
-
+            if move.is_capture:
+                self.pieces[~self.color][move.captured_piece_type] |= move.piece_captured
+            
             self.combined_color = np.zeros(2, dtype=np.uint64) 
             for p in Piece:
                 for c in Color:
@@ -49,6 +67,13 @@ class ChessBoard():
             self.board = self.combined_color[Color.WHITE] | self.combined_color[Color.BLACK]
 
     def get_valid_moves(self):
+        # Making a copy to not modify the original state of the board
+        original_pieces = np.copy(self.pieces)
+        original_combined_color = np.copy(self.combined_color)
+        original_board = self.board
+        original_color = self.color
+        original_move_log = list(self.move_log)
+
         moves = []
         self.in_check, self.pins, self.checks = self.check_for_pins_and_checks()
         king_bitmap = self.pieces[self.color][Piece.KING]
@@ -94,6 +119,13 @@ class ChessBoard():
             
             if not in_check:
                 legal_moves.append(move)
+        
+        # restoring original board state
+        self.pieces = original_pieces
+        self.combined_color = original_combined_color
+        self.board = original_board
+        self.color = original_color
+        self.move_log = original_move_log
         
         return legal_moves
 
