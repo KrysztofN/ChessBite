@@ -232,25 +232,25 @@ class ChessBoard():
 
     def get_pawn_moves(self, r, c, moves):
         if self.color == Color.WHITE:
-            if not (self.board &  np.uint64(1 << (63 - ((r-1) * 8 + c)))):
+            if r > 0 and not (self.board &  np.uint64(1 << (63 - ((r-1) * 8 + c)))):
                 moves.append(Move((r,c), (r-1, c)))
                 if r == 6 and not(self.board & np.uint64(1 << (63 - ((r-2) * 8 + c)))):
                     moves.append(Move((r,c), (r-2,c)))
-            if c > 0:
+            if r > 0 and c > 0:
                 if self.combined_color[Color.BLACK] & np.uint64(1 << (63 - ((r-1) * 8 + (c-1)))):
                     moves.append(Move((r,c), (r-1, c-1)))
-            if c < 7: 
+            if r > 0 and c < 7: 
                 if self.combined_color[Color.BLACK] & np.uint64(1 << (63 - ((r-1) * 8 + (c+1)))):
                     moves.append(Move((r,c), (r-1, c+1)))
         else:
-            if not(self.board & np.uint64(1 << (63 - ((r+1) * 8 + c)))):
+            if r < 7 and not(self.board & np.uint64(1 << (63 - ((r+1) * 8 + c)))):
                 moves.append(Move((r,c), (r+1,c)))
                 if r == 1 and not (self.board & np.uint64(1 << (63 - ((r+2) * 8 + c)))):
                     moves.append(Move((r,c), (r+2,c)))
-            if c > 0:
+            if r < 7 and c > 0:
                 if self.combined_color[Color.WHITE] & np.uint64(1 << (63 - ((r+1) * 8 + (c-1)))):
                     moves.append(Move((r,c), (r+1, c-1)))
-            if c < 7: 
+            if r < 7 and c < 7: 
                 if self.combined_color[Color.WHITE] & np.uint64(1 << (63 - ((r+1) * 8 + (c+1)))):
                     moves.append(Move((r,c), (r+1, c+1)))
 
