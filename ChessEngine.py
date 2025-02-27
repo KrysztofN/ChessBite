@@ -76,6 +76,7 @@ class ChessBoard():
 
         moves = []
         self.in_check, self.pins, self.checks = self.check_for_pins_and_checks()
+        print(self.in_check)
         king_bitmap = self.pieces[self.color][Piece.KING]
         king_row, king_col = self.get_coordinates(king_bitmap)
 
@@ -150,7 +151,7 @@ class ChessBoard():
             return False, None
 
     def check_for_pins_and_checks(self):
-        directions = [(-1, -1), (-1, 1), (1, -1), (1, 1), (-1, 0), (0, 1), (1, 0), (0, -1)]
+        directions = ((-1, 0), (0, -1), (1, 0), (0, 1), (-1, -1), (-1, 1), (1, -1), (1, 1))
         pins = []
         checks = []
         in_check = False
@@ -167,7 +168,7 @@ class ChessBoard():
                     end_piece = self.get_piece_at(end_row, end_col)
                     if end_piece is None:
                         continue
-                    if end_piece[0] == self.color:
+                    if end_piece[0] == self.color and end_piece[1] != Piece.KING:
                         if possible_pin == ():
                             possible_pin = (end_row, end_col, d[0], d[1])
                         else:
