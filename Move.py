@@ -1,3 +1,4 @@
+from constans import Piece, Color
 
 class Move():
 
@@ -18,11 +19,18 @@ class Move():
         self.move_ID = self.start_row * 1000 + self.start_col * 100 + self.end_row * 10 + self.end_col
         self.is_capture = False
         self.captured_piece_type = None
+        self.moved_piece_type = None
+        self.moved_piece_color = None
+        self.is_pawn_promotion = False 
 
     def __eq__(self, other):
         if isinstance(other, Move):
             return self.move_ID == other.move_ID
         return False 
+
+    def check_pawn_promotion(self):
+        if (self.moved_piece_type == Piece.PAWN and self.moved_piece_color == Color.WHITE and self.end_row == 0) or (self.moved_piece_type == Piece.PAWN and self.moved_piece_color == Color.BLACK and self.end_row == 7):
+            self.is_pawn_promotion = True
 
     def get_chess_notation(self):
         return self.get_rank_file(self.start_row, self.start_col) + self.get_rank_file(self.end_row, self.end_col)

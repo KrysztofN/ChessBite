@@ -20,14 +20,23 @@ class ChessBoard():
             move.is_capture = True
             for piece_type in Piece:
                 if self.pieces[~self.color][piece_type] & move.piece_captured:
-                    move.captured_piece_type = piece_type
-                    break
+                    move.captured_piece_type = piece_type                
+                if self.pieces[self.color][piece_type] & move.piece_moved:
+                    move.moved_piece_type = piece_type
+                    move.moved_piece_color = self.color
+
+        move.check_pawn_promotion()
 
         for piece_type in Piece:
             if self.pieces[self.color][piece_type] & move.piece_moved:
                 self.pieces[self.color][piece_type] &= ~(np.uint64(move.piece_moved))     
-                self.pieces[self.color][piece_type] |= np.uint64(move.piece_captured)
-                break  
+                if move.is_pawn_promotion:
+                    print(move.moved_piece_type)
+                    print(move.moved_piece_color)
+                    self.pieces[self.color][Piece.QUEEN] |= np.uint64(move.piece_captured)
+                else:
+                    self.pieces[self.color][piece_type] |= np.uint64(move.piece_captured)
+                    break  
         
         for piece_type in Piece:
             if self.pieces[~self.color][piece_type] & move.piece_captured:
@@ -44,17 +53,23 @@ class ChessBoard():
 
         self.move_log.append(move)
         self.color = ~self.color
+
+
     
     def undo_move(self):
         if self.move_log:
             move = self.move_log.pop()
             self.color = ~self.color
 
-            for piece_type in Piece:
-                if self.pieces[self.color][piece_type] & move.piece_captured:
-                    self.pieces[self.color][piece_type] &= ~(np.uint64(move.piece_captured))
-                    self.pieces[self.color][piece_type] |= np.uint64(move.piece_moved)
-                    break
+            if move.is_pawn_promotion:
+                self.pieces[self.color][Piece.QUEEN] &= ~(np.uint64(move.piece_captured))
+                self.pieces[self.color][Piece.PAWN] |= np.uint64(move.piece_moved)
+            else:
+                for piece_type in Piece:
+                    if self.pieces[self.color][piece_type] & move.piece_captured:
+                        self.pieces[self.color][piece_type] &= ~(np.uint64(move.piece_captured))
+                        self.pieces[self.color][piece_type] |= np.uint64(move.piece_moved)
+                        break
             
             if move.is_capture:
                 self.pieces[~self.color][move.captured_piece_type] |= move.piece_captured
@@ -76,7 +91,6 @@ class ChessBoard():
 
         moves = []
         self.in_check, self.pins, self.checks = self.check_for_pins_and_checks()
-        print(self.in_check)
         king_bitmap = self.pieces[self.color][Piece.KING]
         king_row, king_col = self.get_coordinates(king_bitmap)
 
