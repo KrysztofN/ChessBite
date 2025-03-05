@@ -14,17 +14,37 @@ class ChessBoard():
         self.pins = []
         self.check = []
         self.captured_piece = False
+        self.en_passant_possible = ()
     
     def make_move(self, move):
 
-        if self.combined_color[~self.color] & move.piece_captured:
+        for piece_type in Piece:
+            if self.pieces[self.color][piece_type] & move.piece_moved:
+                move.moved_piece_type = piece_type
+                move.moved_piece_color = self.color
+                break
+
+        #  En passant captures
+        if move.is_en_passant_move:
+            move.is_capture = True
+            for piece_type in Piece:
+                en_passant_captured = move.piece_captured >> 8 if self.color == Color.WHITE else move.piece_captured << 8
+                if self.pieces[~self.color][piece_type] & en_passant_captured:
+                    move.captured_piece_type = piece_type                
+        
+        #  Regular captures
+        elif self.combined_color[~self.color] & move.piece_captured:
             move.is_capture = True
             for piece_type in Piece:
                 if self.pieces[~self.color][piece_type] & move.piece_captured:
-                    move.captured_piece_type = piece_type                
-                if self.pieces[self.color][piece_type] & move.piece_moved:
-                    move.moved_piece_type = piece_type
-                    move.moved_piece_color = self.color
+                    move.captured_piece_type = piece_type
+                    break
+        
+        #  Set en passant square
+        if move.moved_piece_type == Piece.PAWN and abs(move.start_row - move.end_row) == 2:
+            self.en_passant_possible = ((move.start_row + move.end_row)//2, move.end_col)
+        else:
+            self.en_passant_possible = ()
 
         move.check_pawn_promotion()
 
@@ -37,10 +57,18 @@ class ChessBoard():
                     self.pieces[self.color][piece_type] |= np.uint64(move.piece_captured)
                     break  
         
-        for piece_type in Piece:
-            if self.pieces[~self.color][piece_type] & move.piece_captured:
-                self.pieces[~self.color][piece_type] &= ~(np.uint64(move.piece_captured))   
-                break  
+        if move.is_en_passant_move:
+            en_passant_captured = move.piece_captured >> 8 if self.color == Color.WHITE else move.piece_captured << 8
+            for piece_type in Piece:
+                if self.pieces[~self.color][piece_type] & en_passant_captured:
+                    self.pieces[~self.color][piece_type] &= ~(np.uint64(en_passant_captured))   
+                    break  
+
+        else:
+            for piece_type in Piece:
+                if self.pieces[~self.color][piece_type] & move.piece_captured:
+                    self.pieces[~self.color][piece_type] &= ~(np.uint64(move.piece_captured))   
+                    break  
 
         self.combined_color = np.zeros(2, dtype=np.uint64) 
         for p in Piece:
@@ -71,7 +99,15 @@ class ChessBoard():
                         break
             
             if move.is_capture:
-                self.pieces[~self.color][move.captured_piece_type] |= move.piece_captured
+                if move.is_en_passant_move:
+                    en_passant_captured = move.piece_captured >> 8 if self.color == Color.WHITE else move.piece_captured << 8
+                    self.pieces[~self.color][move.captured_piece_type] |= np.uint64(en_passant_captured)
+                    self.en_passant_possible = (move.end_row, move.end_col)
+                else:
+                    self.pieces[~self.color][move.captured_piece_type] |= move.piece_captured
+            
+            if move.moved_piece_type == Piece.PAWN and abs(move.start_row - move.end_row) == 2:
+                self.en_passant_possible = ()
             
             self.combined_color = np.zeros(2, dtype=np.uint64) 
             for p in Piece:
@@ -87,6 +123,7 @@ class ChessBoard():
         original_board = self.board
         original_color = self.color
         original_move_log = list(self.move_log)
+        temp_en_passant_possible = self.en_passant_possible
 
         moves = self.get_all_possible_moves()
         for i in range(len(moves) - 1,-1, -1):
@@ -112,7 +149,8 @@ class ChessBoard():
         self.board = original_board
         self.color = original_color
         self.move_log = original_move_log
-        
+        self.en_passant_possible = temp_en_passant_possible
+
         return moves
                         
     def in_check(self):
@@ -167,9 +205,14 @@ class ChessBoard():
             if r > 0 and c > 0:
                 if self.combined_color[Color.BLACK] & np.uint64(1 << (63 - ((r-1) * 8 + (c-1)))):
                     moves.append(Move((r,c), (r-1, c-1)))
+                # TODO: when en passant is it neccesary to check whether there is a piece at the capture location?
+                elif (r-1, c-1) == self.en_passant_possible and not (self.board &  np.uint64(1 << (63 - ((r-1) * 8 + (c-1))))):
+                    moves.append(Move((r,c), (r-1, c-1), is_en_passant_move=True))
             if r > 0 and c < 7: 
                 if self.combined_color[Color.BLACK] & np.uint64(1 << (63 - ((r-1) * 8 + (c+1)))):
                     moves.append(Move((r,c), (r-1, c+1)))
+                elif (r-1, c+1) == self.en_passant_possible and not (self.board &  np.uint64(1 << (63 - ((r-1) * 8 + (c+1))))):
+                    moves.append(Move((r,c), (r-1, c+1), is_en_passant_move=True))
         else:
             if r < 7 and not(self.board & np.uint64(1 << (63 - ((r+1) * 8 + c)))):
                 moves.append(Move((r,c), (r+1,c)))
@@ -178,9 +221,13 @@ class ChessBoard():
             if r < 7 and c > 0:
                 if self.combined_color[Color.WHITE] & np.uint64(1 << (63 - ((r+1) * 8 + (c-1)))):
                     moves.append(Move((r,c), (r+1, c-1)))
+                elif (r+1, c-1) == self.en_passant_possible and not (self.board &  np.uint64(1 << (63 - ((r+1) * 8 + (c-1))))):
+                    moves.append(Move((r,c), (r+1, c-1), is_en_passant_move=True))
             if r < 7 and c < 7: 
                 if self.combined_color[Color.WHITE] & np.uint64(1 << (63 - ((r+1) * 8 + (c+1)))):
                     moves.append(Move((r,c), (r+1, c+1)))
+                elif (r+1, c+1) == self.en_passant_possible and not (self.board &  np.uint64(1 << (63 - ((r+1) * 8 + (c+1))))):
+                    moves.append(Move((r,c), (r+1, c+1), is_en_passant_move=True))
 
     def get_rook_moves(self, r, c, moves):
         directions = [(-1, 0), (0, 1), (1, 0), (0, -1)]

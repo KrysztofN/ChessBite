@@ -79,11 +79,11 @@ def draw_game_state(playerClicks, valid_moves, screen, gs):
     draw_pieces(screen, gs)
 
 def highlight_possible_positions(playerClicks, valid_moves, screen, gs):
-    highlighted_squares = []
+    valid_moves_for_piece = []
     start_r, start_c = playerClicks[0][0], playerClicks[0][1]
     for move in valid_moves:
         if start_r == move.start_row and start_c == move.start_col:
-            highlighted_squares.append((move.end_row, move.end_col))
+            valid_moves_for_piece.append((move))
     
     # White is 0, black is 1 
     # Only allow to select a piece if it's current color's turn
@@ -93,14 +93,19 @@ def highlight_possible_positions(playerClicks, valid_moves, screen, gs):
         s.fill(p.Color('grey'))
         screen.blit(s, (start_c * SQ_SIZE, start_r * SQ_SIZE))
 
-    for end_r, end_c in highlighted_squares:
+    for move in valid_moves_for_piece:
+        end_r, end_c = move.end_row, move.end_col
         center_x = end_c * SQ_SIZE + SQ_SIZE//2
         center_y = end_r * SQ_SIZE + SQ_SIZE//2
+
         # if capture possible
         if gs.combined_color[~gs.color] & np.uint64(1 << (63 - (end_r * 8 + end_c))):
             p.draw.circle(screen, p.Color('grey'), (center_x, center_y), SQ_SIZE//2.5, 8)
+        elif move.is_en_passant_move:
+            p.draw.circle(screen, p.Color('grey'), (center_x, center_y), SQ_SIZE//2.5, 8)
         else:
             p.draw.circle(screen, p.Color('grey'), (center_x, center_y), SQ_SIZE//6)
+      
 
 def draw_board(screen):
     # colors = [p.Color(184,139,74), p.Color(227,193,111)]
