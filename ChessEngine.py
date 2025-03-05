@@ -105,9 +105,16 @@ class ChessBoard():
                     self.en_passant_possible = (move.end_row, move.end_col)
                 else:
                     self.pieces[~self.color][move.captured_piece_type] |= move.piece_captured
-            
-            if move.moved_piece_type == Piece.PAWN and abs(move.start_row - move.end_row) == 2:
-                self.en_passant_possible = ()
+            else:
+                if len(self.move_log) > 0:
+                    previous_move = self.move_log[-1]
+    
+                    if previous_move.moved_piece_type == Piece.PAWN and abs(previous_move.start_row - previous_move.end_row) == 2:
+                        self.en_passant_possible = ((previous_move.start_row + previous_move.end_row)//2, previous_move.end_col)
+                    else:
+                        self.en_passant_possible = ()
+                else:
+                    self.en_passant_possible = ()
             
             self.combined_color = np.zeros(2, dtype=np.uint64) 
             for p in Piece:
