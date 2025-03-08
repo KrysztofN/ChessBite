@@ -3,7 +3,7 @@ import numpy as np
 import os
 os.environ['PYGAME_HIDE_SUPPORT_PROMPT'] = '1' # don't display pygame prompt
 import pygame as p
-from constans import Color, Piece
+from Constants import Color, Piece
 
 
 
@@ -27,6 +27,7 @@ def main():
     gs.init_board()
     valid_moves = gs.get_valid_moves()
     move_made = False
+    game_over = False
 
     load_images()
     running = True
@@ -67,6 +68,15 @@ def main():
             move_made = False
 
         draw_game_state(playerClicks, valid_moves, screen, gs)
+        if gs.check_mate:
+            game_over = True
+            print(f"{gs.color} wins by checkmate!!!")
+        elif gs.stale_mate:
+            game_over = True
+            print(f"{gs.color} wins by stalemate!!!")
+
+
+
         clock.tick(MAX_FPS)
         p.display.flip()
 
