@@ -24,11 +24,12 @@ def main():
     clock = p.time.Clock()
     screen.fill(p.Color("white"))
     gs = ChessEngine.ChessBoard()
+    ai = AIMoveFinder.AIMoveFinder()
     gs.init_board()
     valid_moves = gs.get_valid_moves()
     move_made = False
     game_over = False
-    player_one = Player.HUMAN # player one corresponds to white
+    player_one = Player.AI # player one corresponds to white
     player_two = Player.AI # player two corresponds to black
 
     load_images()
@@ -69,21 +70,25 @@ def main():
 
         # AI moves
         if not game_over and not human_turn:
-            AI_move = AIMoveFinder.find_random_move(valid_moves)
-            gs.make_move(AI_move)
+            best_move = ai.find_best_move(gs, valid_moves)
+            gs.make_move(best_move)
             move_made = True
 
         if move_made:
+            score = ai.score_material(gs.pieces)
+            print(score)
             valid_moves = gs.get_valid_moves()
             move_made = False
 
         draw_game_state(playerClicks, valid_moves, screen, gs)
-        if gs.check_mate:
-            game_over = True
-            print(f"{gs.color} wins by checkmate!!!")
-        elif gs.stale_mate:
-            game_over = True
-            print(f"Draw by stalemate!")
+
+        if not game_over:
+            if gs.check_mate:
+                game_over = True
+                print(f"{gs.color} wins by checkmate!!!")
+            elif gs.stale_mate:
+                game_over = True
+                print(f"Draw by stalemate!")
 
 
 
