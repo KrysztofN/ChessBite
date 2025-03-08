@@ -10,6 +10,10 @@ class Color(IntEnum):
         else:
             return Color.WHITE
 
+class Player(IntEnum):
+    AI = 0
+    HUMAN = 1
+
 # ROWS
 class Rank(IntEnum): 
     ONE = 0

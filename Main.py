@@ -3,7 +3,7 @@ import numpy as np
 import os
 os.environ['PYGAME_HIDE_SUPPORT_PROMPT'] = '1' # don't display pygame prompt
 import pygame as p
-from Constants import Color, Piece
+from Constants import Color, Piece, Player
 
 
 
@@ -28,36 +28,39 @@ def main():
     valid_moves = gs.get_valid_moves()
     move_made = False
     game_over = False
+    player_one = Player.AI # player one corresponds to white
+    player_two = Player.HUMAN # player two corresponds to black
 
     load_images()
     running = True
     sqSelected = ()
     playerClicks = []
-    while not game_over:
+    while running:
         for e in p.event.get():
             if e.type == p.QUIT:
                 running = False
             elif e.type == p.MOUSEBUTTONDOWN:
-                location = p.mouse.get_pos() # (x, y) location of mouse
-                column = location[0]//SQ_SIZE 
-                row = location[1]//SQ_SIZE
-                if sqSelected == (row, column): # pressed the same square twice
-                    sqSelected = ()
-                    playerClicks = []
-                else:
-                    sqSelected = (row, column)
-                    playerClicks.append(sqSelected)
-                if len(playerClicks) == 2: # second click -> move 
-                    move = ChessEngine.Move(playerClicks[0], playerClicks[1])
-                    print(move.get_chess_notation())
-                    for i in range(len(valid_moves)):
-                        if move == valid_moves[i]:
-                            gs.make_move(valid_moves[i])
-                            move_made = True
-                            sqSelected = () # reset user clicks
-                            playerClicks = []
-                    if not move_made:
-                        playerClicks = [sqSelected]
+                if not game_over:
+                    location = p.mouse.get_pos() # (x, y) location of mouse
+                    column = location[0]//SQ_SIZE 
+                    row = location[1]//SQ_SIZE
+                    if sqSelected == (row, column): # pressed the same square twice
+                        sqSelected = ()
+                        playerClicks = []
+                    else:
+                        sqSelected = (row, column)
+                        playerClicks.append(sqSelected)
+                    if len(playerClicks) == 2: # second click -> move 
+                        move = ChessEngine.Move(playerClicks[0], playerClicks[1])
+                        print(move.get_chess_notation())
+                        for i in range(len(valid_moves)):
+                            if move == valid_moves[i]:
+                                gs.make_move(valid_moves[i])
+                                move_made = True
+                                sqSelected = () # reset user clicks
+                                playerClicks = []
+                        if not move_made:
+                            playerClicks = [sqSelected]
             elif e.type == p.KEYDOWN:
                 if e.key == p.K_r:
                     gs.undo_move() 
@@ -118,7 +121,7 @@ def highlight_possible_positions(playerClicks, valid_moves, screen, gs):
 
 def draw_board(screen):
     # colors = [p.Color(184,139,74), p.Color(227,193,111)]
-    colors = [p.Color(238, 238, 210), p.Color(118, 150, 86)]
+    colors = [p.Color(118, 150, 86), p.Color(238, 238, 210)]
     for row in range(DIMENSION):
         for column in range(DIMENSION):
             color = colors[(row+column + 1) % 2]
