@@ -9,7 +9,7 @@ class Move():
                      "e" : 4, "f" : 5, "g" : 6, "h" : 7}
     cols_to_files = {v:k for k, v in files_to_cols.items()}
 
-    def __init__(self, start_sq, end_sq, is_en_passant_move = False):
+    def __init__(self, start_sq, end_sq, is_en_passant_move = False, is_castle_move = False):
         self.start_row = start_sq[0]
         self.start_col = start_sq[1]
         self.end_row = end_sq[0]
@@ -23,6 +23,7 @@ class Move():
         self.moved_piece_color = None
         self.is_pawn_promotion = False 
         self.is_en_passant_move = is_en_passant_move
+        self.is_castle_move = is_castle_move
 
 
     def __eq__(self, other):

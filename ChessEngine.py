@@ -15,6 +15,9 @@ class ChessBoard():
         self.check = []
         self.captured_piece = False
         self.en_passant_possible = ()
+        self.current_castling_rights = CastleRights(True, True, True, True)
+        self.castle_rights_log = [CastleRights(self.current_castling_rights.wks, self.current_castling_rights.bks, 
+                                               self.current_castling_rights.wqs, self.current_castling_rights.bqs)]
     
     def make_move(self, move):
 
@@ -69,6 +72,23 @@ class ChessBoard():
                 if self.pieces[~self.color][piece_type] & move.piece_captured:
                     self.pieces[~self.color][piece_type] &= ~(np.uint64(move.piece_captured))   
                     break  
+        
+        if move.is_castle_move:
+            if move.end_col - move.start_col == 2: # kingside castle
+                rightmost_rook_start = self.pieces[self.color][Piece.ROOK] & (~self.pieces[self.color][Piece.ROOK] + 1)
+                self.pieces[self.color][Piece.ROOK] &= ~rightmost_rook_start
+                rightmost_rook_end = self.get_bit_mask(move.end_row, move.end_col-1)
+                self.pieces[self.color][Piece.ROOK] |= rightmost_rook_end
+            else: # queenside castle
+                leftmost_rook_start = self.pieces[self.color][Piece.ROOK] & (1 << (self.find_highest_set_bit_position(self.pieces[self.color][Piece.ROOK])))
+                self.pieces[self.color][Piece.ROOK] &= ~leftmost_rook_start
+                lefttmost_rook_end = self.get_bit_mask(move.end_row, move.end_col+1)
+                self.pieces[self.color][Piece.ROOK] |= lefttmost_rook_end
+
+        # Castling rights
+        self.update_castle_rights(move)
+        self.castle_rights_log.append(CastleRights(self.current_castling_rights.wks, self.current_castling_rights.bks, 
+                                               self.current_castling_rights.wqs, self.current_castling_rights.bqs))
 
         self.combined_color = np.zeros(2, dtype=np.uint64) 
         for p in Piece:
@@ -116,12 +136,49 @@ class ChessBoard():
                 else:
                     self.en_passant_possible = ()
             
+            # Undo castle rights
+            self.castle_rights_log.pop()
+            self.current_castling_rights = self.castle_rights_log[-1]
+
+            # Undo castle moves
+            if move.is_castle_move:
+                if move.end_col - move.start_col == 2: # kingside castle
+                    rightmost_rook_start = self.pieces[self.color][Piece.ROOK] & (~self.pieces[self.color][Piece.ROOK] + 1)
+                    self.pieces[self.color][Piece.ROOK] &= ~rightmost_rook_start
+                    rightmost_rook_end = self.get_bit_mask(move.end_row, move.end_col+1)
+                    self.pieces[self.color][Piece.ROOK] |= rightmost_rook_end
+                else: # queenside castle
+                    leftmost_rook_start = self.pieces[self.color][Piece.ROOK] & (1 << (self.find_highest_set_bit_position(self.pieces[self.color][Piece.ROOK])))
+                    self.pieces[self.color][Piece.ROOK] &= ~leftmost_rook_start
+                    lefttmost_rook_end = self.get_bit_mask(move.end_row, move.end_col-2)
+                    self.pieces[self.color][Piece.ROOK] |= lefttmost_rook_end
+            
             self.combined_color = np.zeros(2, dtype=np.uint64) 
             for p in Piece:
                 for c in Color:
                     self.combined_color[c] |= self.pieces[c][p]
             
             self.board = self.combined_color[Color.WHITE] | self.combined_color[Color.BLACK]
+
+    def update_castle_rights(self, move):
+        if move.moved_piece_type == Piece.KING and move.moved_piece_color == Color.WHITE:
+            self.current_castling_rights.wks = False
+            self.current_castling_rights.wqs = False
+        elif move.moved_piece_type == Piece.KING and move.moved_piece_color == Color.BLACK:
+            self.current_castling_rights.bks = False
+            self.current_castling_rights.bqs = False
+        elif move.moved_piece_type == Piece.ROOK and move.moved_piece_color == Color.WHITE:
+            if move.start_row == 7:
+                if move.start_col == 0: # left rook
+                    self.current_castling_rights.wqs = False
+                elif move.start_col == 7: # right rook
+                    self.current_castling_rights.wks = False
+        elif move.moved_piece_type == Piece.ROOK and move.moved_piece_color == Color.BLACK:
+            if move.start_row == 0:
+                if move.start_col == 0: # left rook
+                    self.current_castling_rights.bqs = False
+                elif move.start_col == 7: # right rook
+                    self.current_castling_rights.bks = False
 
     def get_valid_moves(self):
         # Making a copy to make sure we do not modify the original state of the board
@@ -131,8 +188,15 @@ class ChessBoard():
         original_color = self.color
         original_move_log = list(self.move_log)
         temp_en_passant_possible = self.en_passant_possible
-
+        original_castle_rights_log = [CastleRights(cr.wks, cr.bks, cr.wqs, cr.bqs) for cr in self.castle_rights_log]
+        temp_castling_rights = CastleRights(self.current_castling_rights.wks, self.current_castling_rights.bks, 
+                                            self.current_castling_rights.wqs, self.current_castling_rights.bqs)
         moves = self.get_all_possible_moves()
+        
+        king_bitmap = self.pieces[self.color][Piece.KING]
+        king_row, king_col = self.get_coordinates(king_bitmap)
+        self.get_castle_moves(king_row, king_col, moves)
+
         for i in range(len(moves) - 1,-1, -1):
             self.make_move(moves[i])
             self.color = ~self.color
@@ -157,6 +221,8 @@ class ChessBoard():
         self.color = original_color
         self.move_log = original_move_log
         self.en_passant_possible = temp_en_passant_possible
+        self.castle_rights_log = original_castle_rights_log
+        self.current_castling_rights = temp_castling_rights
 
         return moves
                         
@@ -279,35 +345,57 @@ class ChessBoard():
                 if self.combined_color[self.color] & np.uint64(1 << (63 - (move_r * 8 + move_c))):
                     continue  
                 moves.append(Move((r, c), (move_r, move_c)))
+    
+    def get_castle_moves(self, r, c, moves):
+        if self.square_under_attack(r, c):
+            return # cannot castle while in check
+        if (self.color == Color.WHITE and self.current_castling_rights.wks) or (self.color == Color.BLACK and self.current_castling_rights.bks):
+            self.get_kingside_castle_moves(r, c, moves, self.color)
+        if (self.color == Color.WHITE and self.current_castling_rights.wqs) or (self.color == Color.BLACK and self.current_castling_rights.bqs):
+            self.get_queenside_castle_moves(r, c, moves, self.color)
+
+
+    def get_kingside_castle_moves(self, r, c, moves, ally_color):
+        if not (self.board & self.get_bit_mask(r, c+1)) and not (self.board & self.get_bit_mask(r, c+2)):
+            if not self.square_under_attack(r, c + 1) and not self.square_under_attack(r, c + 2):
+                moves.append(Move((r, c), (r, c+2), is_castle_move = True))
+
+    def get_queenside_castle_moves(self, r, c, moves, ally_color):
+        if not (self.board & self.get_bit_mask(r, c-1)) and not (self.board & self.get_bit_mask(r, c-2)) and not (self.board & self.get_bit_mask(r, c-3)):
+            if not self.square_under_attack(r, c - 1) and not self.square_under_attack(r, c - 2):
+                moves.append(Move((r, c), (r, c-2), is_castle_move = True))
                 
-    def get_piece_at(self, row, column):
-        square_mask = np.uint64(1 << (63 - (row * 8 + column)))
-        for piece_type in Piece:
-            for color in Color:
-                if self.pieces[color][piece_type] & square_mask:
-                    return (color, piece_type)
-        return None
+    def get_bit_mask(self, row, column):
+        bit_mask = np.uint64(1 << (63 - (row * 8 + column)))
+        return bit_mask
 
     def get_coordinates(self, bit_mask):
         square = (63 - int(np.log2(bit_mask)))
         row = square // 8
         col = square % 8
         return row, col
-        
+
+    def find_highest_set_bit_position(self, bit_mask):
+        position = 0
+        while bit_mask:
+            position += 1
+            bit_mask >>= 1
+        return position - 1
+
     def init_board(self):
         self.pieces[Color.WHITE][Piece.PAWN] = np.uint64(0x000000000000FF00)
         self.pieces[Color.WHITE][Piece.KNIGHT] = np.uint64(0x0000000000000042)
         self.pieces[Color.WHITE][Piece.BISHOP] = np.uint64(0x0000000000000024)
         self.pieces[Color.WHITE][Piece.ROOK] = np.uint64(0x0000000000000081)
-        self.pieces[Color.WHITE][Piece.QUEEN] = np.uint64(0x0000000000000008)
-        self.pieces[Color.WHITE][Piece.KING] = np.uint64(0x0000000000000010)
+        self.pieces[Color.WHITE][Piece.KING] = np.uint64(0x0000000000000008)
+        self.pieces[Color.WHITE][Piece.QUEEN] = np.uint64(0x0000000000000010)
 
         self.pieces[Color.BLACK][Piece.PAWN] = np.uint64(0x00FF000000000000)
         self.pieces[Color.BLACK][Piece.KNIGHT] = np.uint64(0x4200000000000000)
         self.pieces[Color.BLACK][Piece.BISHOP] = np.uint64(0x2400000000000000)
         self.pieces[Color.BLACK][Piece.ROOK] = np.uint64(0x8100000000000000)
-        self.pieces[Color.BLACK][Piece.QUEEN] = np.uint64(0x0800000000000000)
-        self.pieces[Color.BLACK][Piece.KING] = np.uint64(0x1000000000000000)
+        self.pieces[Color.BLACK][Piece.KING] = np.uint64(0x0800000000000000)
+        self.pieces[Color.BLACK][Piece.QUEEN] = np.uint64(0x1000000000000000)
     
         for p in Piece:
             for c in Color:
@@ -331,3 +419,12 @@ class ChessBoard():
         output.append("    A B C D E F G H")
 
         return "\n".join(output)
+    
+
+
+class CastleRights:
+    def __init__(self, wks, bks, wqs, bqs):
+        self.wks = wks
+        self.bks = bks
+        self.wqs = wqs
+        self.bqs = bqs
