@@ -1,4 +1,4 @@
-import ChessEngine 
+import ChessEngine, AIMoveFinder
 import numpy as np
 import os
 os.environ['PYGAME_HIDE_SUPPORT_PROMPT'] = '1' # don't display pygame prompt
@@ -28,19 +28,20 @@ def main():
     valid_moves = gs.get_valid_moves()
     move_made = False
     game_over = False
-    player_one = Player.AI # player one corresponds to white
-    player_two = Player.HUMAN # player two corresponds to black
+    player_one = Player.HUMAN # player one corresponds to white
+    player_two = Player.AI # player two corresponds to black
 
     load_images()
     running = True
     sqSelected = ()
     playerClicks = []
     while running:
+        human_turn = (gs.color == Color.WHITE and player_one == Player.HUMAN) or (gs.color == Color.BLACK and player_two == Player.HUMAN) # 0-Human, 1-AI
         for e in p.event.get():
             if e.type == p.QUIT:
                 running = False
             elif e.type == p.MOUSEBUTTONDOWN:
-                if not game_over:
+                if not game_over and human_turn:
                     location = p.mouse.get_pos() # (x, y) location of mouse
                     column = location[0]//SQ_SIZE 
                     row = location[1]//SQ_SIZE
@@ -65,6 +66,12 @@ def main():
                 if e.key == p.K_r:
                     gs.undo_move() 
                     move_made = True
+
+        # AI moves
+        if not game_over and not human_turn:
+            AI_move = AIMoveFinder.find_random_move(valid_moves)
+            gs.make_move(AI_move)
+            move_made = True
 
         if move_made:
             valid_moves = gs.get_valid_moves()
