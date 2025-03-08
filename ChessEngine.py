@@ -1,4 +1,4 @@
-from constans import Color, Piece, File, Rank, PieceMapping
+from Constants import Color, Piece, File, Rank, PieceMapping
 import numpy as np
 
 class ChessBoard():
@@ -420,12 +420,15 @@ class ChessBoard():
     
 
 
+
 class CastleRights:
     def __init__(self, wks, bks, wqs, bqs):
         self.wks = wks
         self.bks = bks
         self.wqs = wqs
         self.bqs = bqs
+
+
 
 class Move():
 

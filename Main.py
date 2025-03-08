@@ -33,7 +33,7 @@ def main():
     running = True
     sqSelected = ()
     playerClicks = []
-    while running:
+    while not game_over:
         for e in p.event.get():
             if e.type == p.QUIT:
                 running = False
@@ -73,7 +73,7 @@ def main():
             print(f"{gs.color} wins by checkmate!!!")
         elif gs.stale_mate:
             game_over = True
-            print(f"{gs.color} wins by stalemate!!!")
+            print(f"Draw by stalemate!")
 
 
 
