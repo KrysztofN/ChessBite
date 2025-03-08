@@ -4,7 +4,6 @@ import os
 os.environ['PYGAME_HIDE_SUPPORT_PROMPT'] = '1' # don't display pygame prompt
 import pygame as p
 from constans import Color, Piece
-from Move import Move
 
 
 
@@ -48,7 +47,7 @@ def main():
                     sqSelected = (row, column)
                     playerClicks.append(sqSelected)
                 if len(playerClicks) == 2: # second click -> move 
-                    move = Move(playerClicks[0], playerClicks[1])
+                    move = ChessEngine.Move(playerClicks[0], playerClicks[1])
                     print(move.get_chess_notation())
                     for i in range(len(valid_moves)):
                         if move == valid_moves[i]:

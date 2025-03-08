@@ -1,6 +1,5 @@
 from constans import Color, Piece, File, Rank, PieceMapping
 import numpy as np
-from Move import Move
 
 class ChessBoard():
     def __init__(self):
@@ -271,35 +270,34 @@ class ChessBoard():
 
     def get_pawn_moves(self, r, c, moves):
         if self.color == Color.WHITE:
-            if r > 0 and not (self.board &  np.uint64(1 << (63 - ((r-1) * 8 + c)))):
+            if r > 0 and not (self.board &  self.get_bit_mask(r-1, c)):
                 moves.append(Move((r,c), (r-1, c)))
-                if r == 6 and not(self.board & np.uint64(1 << (63 - ((r-2) * 8 + c)))):
+                if r == 6 and not(self.board & self.get_bit_mask(r-2, c)):
                     moves.append(Move((r,c), (r-2,c)))
             if r > 0 and c > 0:
-                if self.combined_color[Color.BLACK] & np.uint64(1 << (63 - ((r-1) * 8 + (c-1)))):
+                if self.combined_color[Color.BLACK] & self.get_bit_mask(r-1, c-1):
                     moves.append(Move((r,c), (r-1, c-1)))
-                # TODO: when en passant is it neccesary to check whether there is a piece at the capture location?
-                elif (r-1, c-1) == self.en_passant_possible and not (self.board &  np.uint64(1 << (63 - ((r-1) * 8 + (c-1))))):
+                elif (r-1, c-1) == self.en_passant_possible and not (self.board &  self.get_bit_mask(r-1, c-1)):
                     moves.append(Move((r,c), (r-1, c-1), is_en_passant_move=True))
             if r > 0 and c < 7: 
-                if self.combined_color[Color.BLACK] & np.uint64(1 << (63 - ((r-1) * 8 + (c+1)))):
+                if self.combined_color[Color.BLACK] & self.get_bit_mask(r-1, c+1):
                     moves.append(Move((r,c), (r-1, c+1)))
-                elif (r-1, c+1) == self.en_passant_possible and not (self.board &  np.uint64(1 << (63 - ((r-1) * 8 + (c+1))))):
+                elif (r-1, c+1) == self.en_passant_possible and not (self.board &  self.get_bit_mask(r-1, c+1)):
                     moves.append(Move((r,c), (r-1, c+1), is_en_passant_move=True))
         else:
-            if r < 7 and not(self.board & np.uint64(1 << (63 - ((r+1) * 8 + c)))):
+            if r < 7 and not(self.board & self.get_bit_mask(r+1, c)):
                 moves.append(Move((r,c), (r+1,c)))
-                if r == 1 and not (self.board & np.uint64(1 << (63 - ((r+2) * 8 + c)))):
+                if r == 1 and not (self.board & self.get_bit_mask(r+2, c)):
                     moves.append(Move((r,c), (r+2,c)))
             if r < 7 and c > 0:
-                if self.combined_color[Color.WHITE] & np.uint64(1 << (63 - ((r+1) * 8 + (c-1)))):
+                if self.combined_color[Color.WHITE] & self.get_bit_mask(r+1, c-1):
                     moves.append(Move((r,c), (r+1, c-1)))
-                elif (r+1, c-1) == self.en_passant_possible and not (self.board &  np.uint64(1 << (63 - ((r+1) * 8 + (c-1))))):
+                elif (r+1, c-1) == self.en_passant_possible and not (self.board &  self.get_bit_mask(r+1, c-1)):
                     moves.append(Move((r,c), (r+1, c-1), is_en_passant_move=True))
             if r < 7 and c < 7: 
-                if self.combined_color[Color.WHITE] & np.uint64(1 << (63 - ((r+1) * 8 + (c+1)))):
+                if self.combined_color[Color.WHITE] & self.get_bit_mask(r+1, c+1):
                     moves.append(Move((r,c), (r+1, c+1)))
-                elif (r+1, c+1) == self.en_passant_possible and not (self.board &  np.uint64(1 << (63 - ((r+1) * 8 + (c+1))))):
+                elif (r+1, c+1) == self.en_passant_possible and not (self.board &  self.get_bit_mask(r+1, c+1)):
                     moves.append(Move((r,c), (r+1, c+1), is_en_passant_move=True))
 
     def get_rook_moves(self, r, c, moves):
@@ -327,11 +325,11 @@ class ChessBoard():
             move_r, move_c = r + dir_r, c + dir_c
             
             while 0 <= move_r <= 7 and 0 <= move_c <= 7:
-                if self.combined_color[self.color] & np.uint64(1 << (63 - (move_r * 8 + move_c))):
+                if self.combined_color[self.color] & self.get_bit_mask(move_r, move_c):
                     break  
                 moves.append(Move((r, c), (move_r, move_c)))
                 
-                if self.combined_color[~self.color] & np.uint64(1 << (63 - (move_r * 8 + move_c))):
+                if self.combined_color[~self.color] & self.get_bit_mask(move_r, move_c):
                     break  
                 
                 move_r += dir_r
@@ -342,7 +340,7 @@ class ChessBoard():
             move_r, move_c = r + dir_r, c + dir_c
             
             if 0 <= move_r <= 7 and 0 <= move_c <= 7:
-                if self.combined_color[self.color] & np.uint64(1 << (63 - (move_r * 8 + move_c))):
+                if self.combined_color[self.color] & self.get_bit_mask(move_r, move_c):
                     continue  
                 moves.append(Move((r, c), (move_r, move_c)))
     
@@ -428,3 +426,45 @@ class CastleRights:
         self.bks = bks
         self.wqs = wqs
         self.bqs = bqs
+
+class Move():
+
+    ranks_to_rows = {"1" : 7, "2" : 6, "3" : 5, "4" : 4,
+                     "5" : 3, "6" : 2, "7" : 1, "8" : 0}
+    rows_to_ranks = {v:k for k, v in ranks_to_rows.items()}
+    files_to_cols = {"a" : 0, "b" : 1, "c" : 2, "d" : 3,
+                     "e" : 4, "f" : 5, "g" : 6, "h" : 7}
+    cols_to_files = {v:k for k, v in files_to_cols.items()}
+
+    def __init__(self, start_sq, end_sq, is_en_passant_move = False, is_castle_move = False):
+        self.start_row = start_sq[0]
+        self.start_col = start_sq[1]
+        self.end_row = end_sq[0]
+        self.end_col = end_sq[1]
+        self.piece_moved = 1 << (63 - (self.start_row * 8 + self.start_col))
+        self.piece_captured = 1 << (63 - (self.end_row * 8 + self.end_col))
+        self.move_ID = self.start_row * 1000 + self.start_col * 100 + self.end_row * 10 + self.end_col
+        self.is_capture = False
+        self.captured_piece_type = None
+        self.moved_piece_type = None
+        self.moved_piece_color = None
+        self.is_pawn_promotion = False 
+        self.is_en_passant_move = is_en_passant_move
+        self.is_castle_move = is_castle_move
+
+
+    def __eq__(self, other):
+        if isinstance(other, Move):
+            return self.move_ID == other.move_ID
+        return False 
+
+    def check_pawn_promotion(self):
+        if (self.moved_piece_type == Piece.PAWN and self.moved_piece_color == Color.WHITE and self.end_row == 0) or (self.moved_piece_type == Piece.PAWN and self.moved_piece_color == Color.BLACK and self.end_row == 7):
+            self.is_pawn_promotion = True
+
+    def get_chess_notation(self):
+        return self.get_rank_file(self.start_row, self.start_col) + self.get_rank_file(self.end_row, self.end_col)
+
+    def get_rank_file(self, r, c):
+        return self.cols_to_files[c] + self.rows_to_ranks[r]
+    
