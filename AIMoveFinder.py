@@ -14,33 +14,77 @@ class AIMoveFinder:
 
     def find_best_move(self, gs, valid_moves):
         best_move = random.choice(valid_moves)
-        turn_color = gs.color
-        if turn_color == Color.WHITE:
+
+        if gs.color == Color.WHITE:
             best_score = -float('inf')
         else:
             best_score = float('inf')
 
-        for valid_move in valid_moves:
-            gs.make_move(valid_move)
-            curr_score = self.score_material(gs.pieces)
-            if gs.stale_mate:
-                    curr_score = STALEMATE
-            if turn_color == Color.WHITE:
-                if gs.check_mate:
-                    curr_score = CHECKMATE
-                if curr_score > best_score:
-                    best_score = curr_score
-                    best_move = valid_move
-            else:
-                if gs.check_mate:
-                    curr_score = -CHECKMATE
-                if curr_score < best_score:
-                    best_score = curr_score
-                    best_move = valid_move
+        for move in valid_moves:
+            gs.make_move(move)
+            is_maximizing = (gs.color == Color.WHITE)
+            score = self.negamax(gs, is_maximizing, depth=1, alpha = -float('inf'), beta = float('inf'))
             gs.undo_move()
+
+            if gs.color == Color.WHITE:
+                if score > best_score:
+                    best_score = score
+                    best_move = move
+            else:
+                if score < best_score:
+                    best_score = score
+                    best_move = move
 
         return best_move
     
+    def minimax(self, gs, is_maximizing, depth, alpha, beta):
+        if depth == 0 or gs.check_mate or gs.stale_mate:
+            if gs.check_mate:
+                return CHECKMATE if is_maximizing else -CHECKMATE
+            elif gs.stale_mate:
+                return STALEMATE
+            return self.score_material(gs.pieces)
+
+        if is_maximizing: #Maximizing player
+            best_score = -float('inf')
+            for move in gs.get_valid_moves():
+                gs.make_move(move)
+                score = self.minimax(gs, not is_maximizing, depth - 1, alpha, beta)
+                gs.undo_move()
+                best_score = max(best_score, score)
+                alpha = max(alpha, best_score)
+                if beta <= alpha:
+                    break
+            return best_score
+        else: # Minimizing player
+            best_score = float('inf')
+            for move in gs.get_valid_moves():
+                gs.make_move(move)
+                score = self.minimax(gs, not is_maximizing, depth - 1, alpha, beta)
+                gs.undo_move()
+                best_score = min(best_score, score)
+                beta = min(beta, best_score)
+                if beta <= alpha:
+                    break
+            return best_score
+    
+    def negamax(self, gs, is_maximizing, depth, alpha, beta):
+        if depth == 0 or gs.check_mate or gs.stale_mate:
+            if gs.check_mate:
+                return  CHECKMATE if is_maximizing else -CHECKMATE
+            elif gs.stale_mate:
+                return STALEMATE
+            return self.score_material(gs.pieces) if is_maximizing else -self.score_material(gs.pieces)
+        
+        score = -float('inf')
+        for move in gs.get_valid_moves():
+            gs.make_move(move)
+            score = max(score, -self.negamax(gs, not is_maximizing, depth - 1, -beta, -alpha))
+            gs.undo_move()
+            alpha = max(alpha, score)
+            if beta <= alpha:
+                break
+        return score
 
     # TODO: Scoring based on piece posiiton
     def score_material(self, pieces):

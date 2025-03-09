@@ -29,7 +29,7 @@ def main():
     valid_moves = gs.get_valid_moves()
     move_made = False
     game_over = False
-    player_one = Player.AI # player one corresponds to white
+    player_one = Player.HUMAN # player one corresponds to white
     player_two = Player.AI # player two corresponds to black
 
     load_images()
@@ -67,6 +67,7 @@ def main():
                 if e.key == p.K_r:
                     gs.undo_move() 
                     move_made = True
+                    game_over = False
 
         # AI moves
         if not game_over and not human_turn:

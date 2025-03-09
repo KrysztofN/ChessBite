@@ -74,7 +74,7 @@ class ChessBoard():
         
         if move.is_castle_move:
             if move.end_col - move.start_col == 2: # kingside castle
-                rightmost_rook_start = self.pieces[self.color][Piece.ROOK] & (~self.pieces[self.color][Piece.ROOK] + 1)
+                rightmost_rook_start = self.pieces[self.color][Piece.ROOK] & np.uint64(~self.pieces[self.color][Piece.ROOK] + 1)
                 self.pieces[self.color][Piece.ROOK] &= ~rightmost_rook_start
                 rightmost_rook_end = self.get_bit_mask(move.end_row, move.end_col-1)
                 self.pieces[self.color][Piece.ROOK] |= rightmost_rook_end
@@ -142,7 +142,7 @@ class ChessBoard():
             # Undo castle moves
             if move.is_castle_move:
                 if move.end_col - move.start_col == 2: # kingside castle
-                    rightmost_rook_start = self.pieces[self.color][Piece.ROOK] & (~self.pieces[self.color][Piece.ROOK] + 1)
+                    rightmost_rook_start = self.pieces[self.color][Piece.ROOK] & np.uint64(~self.pieces[self.color][Piece.ROOK] + 1)
                     self.pieces[self.color][Piece.ROOK] &= ~rightmost_rook_start
                     rightmost_rook_end = self.get_bit_mask(move.end_row, move.end_col+1)
                     self.pieces[self.color][Piece.ROOK] |= rightmost_rook_end
@@ -247,7 +247,7 @@ class ChessBoard():
         while current_pieces:
             
             # Get rightmost set bit 
-            rightmost_piece = current_pieces & (~current_pieces+1)
+            rightmost_piece = current_pieces & np.uint64(~current_pieces+1)
             # Zero-out rightmost piece -> consider next rightmost piece
             current_pieces = current_pieces & ~rightmost_piece
             row, col = self.get_coordinates(rightmost_piece)
