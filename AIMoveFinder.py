@@ -13,7 +13,8 @@ class AIMoveFinder:
         return random.choice(valid_moves)
 
     def find_best_move(self, gs, valid_moves):
-        best_move = random.choice(valid_moves)
+        best_move = None
+        better_move_flag = 0
 
         if gs.color == Color.WHITE:
             best_score = -float('inf')
@@ -30,10 +31,15 @@ class AIMoveFinder:
                 if score > best_score:
                     best_score = score
                     best_move = move
+                    better_move_flag +=1
             else:
                 if score < best_score:
                     best_score = score
                     best_move = move
+                    better_move_flag += 1
+        
+        if better_move_flag < 2:
+            best_move = random.choice(valid_moves)
 
         return best_move
     
@@ -85,6 +91,7 @@ class AIMoveFinder:
             if beta <= alpha:
                 break
         return score
+    
 
     # TODO: Scoring based on piece posiiton
     def score_material(self, pieces):
