@@ -26,7 +26,7 @@ def main():
     clock = p.time.Clock()
     screen.fill(p.Color("white"))
     gs = ChessEngine.ChessBoard()
-    move_log_font = p.font.SysFont("Arial", 20, False, False)
+    move_log_font = p.font.SysFont("Arial", 15, False, False)
     ai = AIMoveFinder.AIMoveFinder()
     gs.init_board()
     valid_moves = gs.get_valid_moves()
@@ -47,7 +47,7 @@ def main():
             elif e.type == p.MOUSEBUTTONDOWN:
                 if not game_over and human_turn:
                     location = p.mouse.get_pos() # (x, y) location of mouse
-                    column = location[0]//SQ_SIZE 
+                    column = location[0]//SQ_SIZE  
                     row = location[1]//SQ_SIZE
                     if sqSelected == (row, column) or column >= 8: # pressed the same square twice
                         sqSelected = ()
@@ -112,9 +112,22 @@ def draw_move_log(screen, gs, font):
     p.draw.rect(screen, p.Color("#36454F"), move_log_rectangle)
     move_log = gs.move_log
     padding = 5
+    move_texts = []
+    moves_per_row = 3
+
+    for i in range(0, len(move_log), 2):
+        move_string = str(i//2 + 1) + ". " + str(move_log[i]) + " "
+        if i+1 < len(move_log):
+            move_string  += str(move_log[i+1]) + " "
+        move_texts.append(move_string)
+
+
     space_text = padding
-    for i in range(len(move_log)):
-        text = move_log[i].get_chess_notation()
+    for i in range(0, len(move_texts), moves_per_row):
+        text = ""
+        for j in range(moves_per_row):
+            if i + j < len(move_texts):
+                text += move_texts[i+j]
         text_obj = font.render(text, True, p.Color('white'))
         text_location = move_log_rectangle.move(padding, space_text)
         screen.blit(text_obj, text_location)
@@ -150,8 +163,8 @@ def highlight_possible_positions(playerClicks, valid_moves, screen, gs):
       
 
 def draw_board(screen):
-    # colors = [p.Color(184,139,74), p.Color(227,193,111)]
-    colors = [p.Color(118, 150, 86), p.Color(238, 238, 210)]
+    colors = [p.Color(184,139,74), p.Color(227,193,111)]
+    # colors = [p.Color(118, 150, 86), p.Color(238, 238, 210)]
 
     dark_square = colors[0]
     light_square = colors[1]

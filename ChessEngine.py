@@ -408,23 +408,6 @@ class ChessBoard():
                 self.combined_color[c] |= self.pieces[c][p]
         
         self.board = self.combined_color[Color.WHITE] | self.combined_color[Color.BLACK]
-
-    def __str__(self):
-        board = bin(self.board)[2:]
-        rank = 8
-        file = 8
-        output = []
-        output.append("")
-        for i in range(8):
-            row = f"{rank}   "
-            for j in range(8):
-                row += board[i*8+j:i*8+j+1] + " "
-            output.append(row)
-            rank -= 1               
-        output.append("")
-        output.append("    A B C D E F G H")
-
-        return "\n".join(output)
     
 
 
@@ -468,6 +451,23 @@ class Move():
         if isinstance(other, Move):
             return self.move_ID == other.move_ID
         return False 
+    
+    def __str__(self):
+        if self.is_castle_move:
+            return "0-0" if self.end_col == 6 else "0-0-0"
+
+        end_square = self.get_rank_file(self.end_row, self.end_col)
+        if self.moved_piece_type == Piece.PAWN:
+            if self.is_capture:
+                return PieceMapping.piece_mapping[self.captured_piece_type].upper() + "x" + end_square
+            elif self.is_pawn_promotion:
+                return end_square + "=Q" # default queen
+            else:
+                return end_square
+        else:
+            piece_letter = PieceMapping.piece_mapping[self.moved_piece_type].upper()
+            capture_symbol = "x" if self.is_capture else ""
+            return piece_letter + capture_symbol + end_square
 
     def check_pawn_promotion(self):
         if (self.moved_piece_type == Piece.PAWN and self.moved_piece_color == Color.WHITE and self.end_row == 0) or (self.moved_piece_type == Piece.PAWN and self.moved_piece_color == Color.BLACK and self.end_row == 7):
@@ -478,4 +478,5 @@ class Move():
 
     def get_rank_file(self, r, c):
         return self.cols_to_files[c] + self.rows_to_ranks[r]
+
     

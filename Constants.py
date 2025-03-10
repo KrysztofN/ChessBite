@@ -48,16 +48,10 @@ class Piece(IntEnum):
 class PieceMapping:
 
     piece_mapping = {
-        (Color.WHITE, Piece.PAWN): 'wp',
-        (Color.WHITE, Piece.ROOK): 'wR',
-        (Color.WHITE, Piece.KNIGHT): 'wN',
-        (Color.WHITE, Piece.BISHOP): 'wB',
-        (Color.WHITE, Piece.QUEEN): 'wQ',
-        (Color.WHITE, Piece.KING): 'wK',
-        (Color.BLACK, Piece.PAWN): 'bp',
-        (Color.BLACK, Piece.ROOK): 'bR',
-        (Color.BLACK, Piece.KNIGHT): 'bN',
-        (Color.BLACK, Piece.BISHOP): 'bB',
-        (Color.BLACK, Piece.QUEEN): 'bQ',
-        (Color.BLACK, Piece.KING): 'bK',
+        Piece.PAWN: 'p',
+        Piece.ROOK: 'R',
+        Piece.KNIGHT: 'N',
+        Piece.BISHOP: 'B',
+        Piece.QUEEN: 'Q',
+        Piece.KING: 'K',
     }

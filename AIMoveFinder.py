@@ -14,7 +14,7 @@ class AIMoveFinder:
 
     def find_best_move(self, gs, valid_moves):
         best_move = None
-        better_move_flag = 0
+        # better_move_flag = 0
 
         if gs.color == Color.WHITE:
             best_score = -float('inf')
@@ -24,7 +24,7 @@ class AIMoveFinder:
         for move in valid_moves:
             gs.make_move(move)
             is_maximizing = (gs.color == Color.WHITE)
-            score = self.negamax(gs, is_maximizing, depth=2, alpha = -float('inf'), beta = float('inf'))
+            score = self.minimax(gs, is_maximizing, depth=1, alpha = -float('inf'), beta = float('inf'))
             gs.undo_move()
 
             if gs.color == Color.WHITE:
@@ -36,10 +36,10 @@ class AIMoveFinder:
                 if score < best_score:
                     best_score = score
                     best_move = move
-                    better_move_flag += 1
+                    # better_move_flag += 1
         
-        if better_move_flag < 2:
-            best_move = random.choice(valid_moves)
+        # if better_move_flag < 2:
+        #     best_move = random.choice(valid_moves)
 
         return best_move
     
