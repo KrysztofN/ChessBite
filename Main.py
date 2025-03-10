@@ -7,30 +7,33 @@ from Constants import Color, Piece, Player
 
 
 
-WIDTH = HEIGHT = 512
+BOARD_WIDTH = BOARD_HEIGHT = 512
+MOVE_LOG_PANEL_WIDTH = 250
+MOVE_LOG_PANEL_HEIGHT = BOARD_HEIGHT
 DIMENSION = 8 # 8x8 chessboard
-SQ_SIZE = HEIGHT // DIMENSION
+SQ_SIZE = BOARD_HEIGHT // DIMENSION
 MAX_FPS = 15
 IMAGES = {}
 
 def load_images():
     pieces = ['wp', 'wR', 'wN', 'wB' ,'wK', 'wQ', 'bp', 'bR', 'bN', 'bB', 'bK', 'bQ']
     for piece in pieces:
-        IMAGES[piece] = p.transform.scale(p.image.load("assets/" + piece + ".png"), (SQ_SIZE, SQ_SIZE))
+        IMAGES[piece] = p.transform.scale(p.image.load("assets/" + piece + ".png"), (SQ_SIZE * 0.9, SQ_SIZE * 0.9))
 
 def main():
     p.init()
-    screen = p.display.set_mode((WIDTH, HEIGHT))
+    screen = p.display.set_mode((BOARD_WIDTH + MOVE_LOG_PANEL_WIDTH, BOARD_HEIGHT))
     clock = p.time.Clock()
     screen.fill(p.Color("white"))
     gs = ChessEngine.ChessBoard()
+    move_log_font = p.font.SysFont("Arial", 20, False, False)
     ai = AIMoveFinder.AIMoveFinder()
     gs.init_board()
     valid_moves = gs.get_valid_moves()
     move_made = False
     game_over = False
     player_one = Player.HUMAN # player one corresponds to white
-    player_two = Player.AI # player two corresponds to black
+    player_two = Player.HUMAN # player two corresponds to black
 
     load_images()
     running = True
@@ -46,7 +49,7 @@ def main():
                     location = p.mouse.get_pos() # (x, y) location of mouse
                     column = location[0]//SQ_SIZE 
                     row = location[1]//SQ_SIZE
-                    if sqSelected == (row, column): # pressed the same square twice
+                    if sqSelected == (row, column) or column >= 8: # pressed the same square twice
                         sqSelected = ()
                         playerClicks = []
                     else:
@@ -81,7 +84,7 @@ def main():
             valid_moves = gs.get_valid_moves()
             move_made = False
 
-        draw_game_state(playerClicks, valid_moves, screen, gs)
+        draw_game_state(playerClicks, valid_moves, screen, gs, move_log_font)
 
         if not game_over:
             if gs.check_mate:
@@ -97,11 +100,25 @@ def main():
         p.display.flip()
 
 
-def draw_game_state(playerClicks, valid_moves, screen, gs):
+def draw_game_state(playerClicks, valid_moves, screen, gs, move_log_font):
     draw_board(screen)
     if len(playerClicks) == 1:
         highlight_possible_positions(playerClicks, valid_moves, screen, gs)
     draw_pieces(screen, gs)
+    draw_move_log(screen, gs, move_log_font)
+
+def draw_move_log(screen, gs, font):
+    move_log_rectangle = p.Rect(BOARD_WIDTH, 0, MOVE_LOG_PANEL_WIDTH, MOVE_LOG_PANEL_HEIGHT)
+    p.draw.rect(screen, p.Color("#36454F"), move_log_rectangle)
+    move_log = gs.move_log
+    padding = 5
+    space_text = padding
+    for i in range(len(move_log)):
+        text = move_log[i].get_chess_notation()
+        text_obj = font.render(text, True, p.Color('white'))
+        text_location = move_log_rectangle.move(padding, space_text)
+        screen.blit(text_obj, text_location)
+        space_text += text_obj.get_height()
 
 def highlight_possible_positions(playerClicks, valid_moves, screen, gs):
     valid_moves_for_piece = []
@@ -135,12 +152,30 @@ def highlight_possible_positions(playerClicks, valid_moves, screen, gs):
 def draw_board(screen):
     # colors = [p.Color(184,139,74), p.Color(227,193,111)]
     colors = [p.Color(118, 150, 86), p.Color(238, 238, 210)]
+
+    dark_square = colors[0]
+    light_square = colors[1]
+    text_color_on_dark = colors[1]
+    text_color_on_white = colors[0]
+
+    font = p.font.SysFont("Arial", SQ_SIZE // 4)
+
     for row in range(DIMENSION):
         for column in range(DIMENSION):
             color = colors[(row+column + 1) % 2]
             x = column * SQ_SIZE
             y = row * SQ_SIZE
             p.draw.rect(screen, color, p.Rect(x, y, SQ_SIZE, SQ_SIZE))
+
+            if column == 0:
+                text_color = text_color_on_dark if color == dark_square else text_color_on_white
+                rank_text = font.render(str(8-row), True, text_color)
+                screen.blit(rank_text, (x+5, y+5))
+            
+            if row == 7:
+                text_color = text_color_on_dark if color == dark_square else text_color_on_white
+                file_text = font.render(chr(97+column), True, text_color)
+                screen.blit(file_text, (x+SQ_SIZE - 10, y+SQ_SIZE - 20))
 
 def draw_pieces(screen, gs):
 

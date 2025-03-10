@@ -24,7 +24,7 @@ class AIMoveFinder:
         for move in valid_moves:
             gs.make_move(move)
             is_maximizing = (gs.color == Color.WHITE)
-            score = self.negamax(gs, is_maximizing, depth=1, alpha = -float('inf'), beta = float('inf'))
+            score = self.negamax(gs, is_maximizing, depth=2, alpha = -float('inf'), beta = float('inf'))
             gs.undo_move()
 
             if gs.color == Color.WHITE:

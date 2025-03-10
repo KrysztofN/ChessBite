@@ -75,14 +75,17 @@ class ChessBoard():
         if move.is_castle_move:
             if move.end_col - move.start_col == 2: # kingside castle
                 rightmost_rook_start = self.pieces[self.color][Piece.ROOK] & np.uint64(~self.pieces[self.color][Piece.ROOK] + 1)
-                self.pieces[self.color][Piece.ROOK] &= ~rightmost_rook_start
-                rightmost_rook_end = self.get_bit_mask(move.end_row, move.end_col-1)
-                self.pieces[self.color][Piece.ROOK] |= rightmost_rook_end
+                if rightmost_rook_start:
+                    self.pieces[self.color][Piece.ROOK] &= ~rightmost_rook_start
+                    rightmost_rook_end = self.get_bit_mask(move.end_row, move.end_col-1)
+                    self.pieces[self.color][Piece.ROOK] |= rightmost_rook_end
             else: # queenside castle
-                leftmost_rook_start = self.pieces[self.color][Piece.ROOK] & (1 << (self.find_highest_set_bit_position(self.pieces[self.color][Piece.ROOK])))
-                self.pieces[self.color][Piece.ROOK] &= ~leftmost_rook_start
-                lefttmost_rook_end = self.get_bit_mask(move.end_row, move.end_col+1)
-                self.pieces[self.color][Piece.ROOK] |= lefttmost_rook_end
+                highest_bit = self.find_highest_set_bit_position(self.pieces[self.color][Piece.ROOK])
+                if highest_bit >= 0:
+                    leftmost_rook_start = self.pieces[self.color][Piece.ROOK] & np.uint64(1 << highest_bit)
+                    self.pieces[self.color][Piece.ROOK] &= ~leftmost_rook_start
+                    lefttmost_rook_end = self.get_bit_mask(move.end_row, move.end_col+1)
+                    self.pieces[self.color][Piece.ROOK] |= lefttmost_rook_end
 
         # Castling rights
         self.update_castle_rights(move)
@@ -143,14 +146,17 @@ class ChessBoard():
             if move.is_castle_move:
                 if move.end_col - move.start_col == 2: # kingside castle
                     rightmost_rook_start = self.pieces[self.color][Piece.ROOK] & np.uint64(~self.pieces[self.color][Piece.ROOK] + 1)
-                    self.pieces[self.color][Piece.ROOK] &= ~rightmost_rook_start
-                    rightmost_rook_end = self.get_bit_mask(move.end_row, move.end_col+1)
-                    self.pieces[self.color][Piece.ROOK] |= rightmost_rook_end
+                    if rightmost_rook_start:
+                        self.pieces[self.color][Piece.ROOK] &= ~rightmost_rook_start
+                        rightmost_rook_end = self.get_bit_mask(move.end_row, move.end_col+1)
+                        self.pieces[self.color][Piece.ROOK] |= rightmost_rook_end
                 else: # queenside castle
-                    leftmost_rook_start = self.pieces[self.color][Piece.ROOK] & (1 << (self.find_highest_set_bit_position(self.pieces[self.color][Piece.ROOK])))
-                    self.pieces[self.color][Piece.ROOK] &= ~leftmost_rook_start
-                    lefttmost_rook_end = self.get_bit_mask(move.end_row, move.end_col-2)
-                    self.pieces[self.color][Piece.ROOK] |= lefttmost_rook_end
+                    highest_bit = self.find_highest_set_bit_position(self.pieces[self.color][Piece.ROOK])
+                    if highest_bit >= 0:
+                        leftmost_rook_start = self.pieces[self.color][Piece.ROOK] & np.uint64(1 << highest_bit)
+                        self.pieces[self.color][Piece.ROOK] &= ~leftmost_rook_start
+                        lefttmost_rook_end = self.get_bit_mask(move.end_row, move.end_col-2)
+                        self.pieces[self.color][Piece.ROOK] |= lefttmost_rook_end
             
             self.combined_color = np.zeros(2, dtype=np.uint64) 
             for p in Piece:
@@ -374,6 +380,8 @@ class ChessBoard():
         return row, col
 
     def find_highest_set_bit_position(self, bit_mask):
+        if bit_mask == 0:
+            return -1
         position = 0
         while bit_mask:
             position += 1
